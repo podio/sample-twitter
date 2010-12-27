@@ -63,18 +63,11 @@
 			</snapshots>
 		</repository>
 		<repository>
-			<id>nexus.podio.com</id>
-			<name>Podio Nexus</name>
-			<url>http://localhost:9191/nexus/content/repositories/releases/</url>
+			<id>oss.sonatype.org</id>
+			<name>Sonatype OSS Repository</name>
+			<url>https://oss.sonatype.org/content/groups/public/</url>
 		</repository>
 	</repositories>
-	<distributionManagement>
-		<repository>
-			<id>nexus</id>
-			<name>Podio Nexus</name>
-			<url>http://localhost:9191/nexus/content/repositories/releases/</url>
-		</repository>
-	</distributionManagement>
 	<dependencies>
 		<dependency>
 			<groupId>org.twitter4j</groupId>
