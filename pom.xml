@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.podio.example</groupId>
+	<groupId>com.podio.sample</groupId>
 	<artifactId>twitter</artifactId>
 	<version>0.2.0</version>
 	<name>Twitter</name>
@@ -31,7 +31,7 @@
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<manifestEntries>
-										<Main-Class>com.podio.example.twitter.Importer</Main-Class>
+										<Main-Class>com.podio.sample.twitter.Importer</Main-Class>
 									</manifestEntries>
 								</transformer>
 								<transformer

@@ -1,4 +1,4 @@
-package com.podio.example.twitter;
+package com.podio.sample.twitter;
 
 import java.io.FileInputStream;
 import java.io.IOException;
