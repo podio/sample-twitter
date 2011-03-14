@@ -16,7 +16,6 @@ import twitter4j.QueryResult;
 import twitter4j.Status;
 import twitter4j.Tweet;
 import twitter4j.Twitter;
-import twitter4j.TwitterException;
 import twitter4j.TwitterFactory;
 import twitter4j.User;
 
@@ -46,17 +45,21 @@ public class Importer {
 	private static final String QUERY = "@podio OR #podio";
 
 	/**
-	 * The mapping to the fields in the app
+	 * The id of the app in Podio
 	 */
 	private static final int APP_ID = 29350;
-	private static final int TEXT = 172265;
-	private static final int TWEET = 172266;
-	private static final int FROM = 172267;
-	private static final int AVATAR = 172268;
-	private static final int LOCATION = 172269;
-	private static final int SOURCE = 172270;
-	private static final int LINK = 172271;
-	private static final int REPLY_TO = 180297;
+
+	/**
+	 * The external ids of the fields in Podio
+	 */
+	private static final String TEXT = "title";
+	private static final String TWEET = "tweet";
+	private static final String FROM = "user";
+	private static final String AVATAR = "avatar";
+	private static final String LOCATION = "location";
+	private static final String SOURCE = "source";
+	private static final String LINK = "link";
+	private static final String REPLY_TO = "reply-to";
 
 	/**
 	 * The interface to Twitter
@@ -86,11 +89,10 @@ public class Importer {
 		this.twitter = new TwitterFactory().getOAuthAuthorizedInstance(
 				properties.getProperty("twitter.token"),
 				properties.getProperty("twitter.secret"));
-		ResourceFactory resourceFactory = new ResourceFactory("api.podio.com",
-				"upload.podio.com", 443, true, false,
-				new OAuthClientCredentials(properties
-						.getProperty("podio.client.mail"), properties
-						.getProperty("podio.client.secret")),
+		ResourceFactory resourceFactory = new ResourceFactory(
+				new OAuthClientCredentials(
+						properties.getProperty("podio.client.mail"),
+						properties.getProperty("podio.client.secret")),
 				new OAuthUsernameCredentials(properties
 						.getProperty("podio.user.mail"), properties
 						.getProperty("podio.user.password")));
@@ -99,11 +101,8 @@ public class Importer {
 
 	/**
 	 * Reads from Twitter and posts to the Twitter app
-	 * 
-	 * @throws TwitterException
-	 *             If any error occurs during communication with Twitter
 	 */
-	public void process() throws TwitterException {
+	public void process() throws Exception {
 		QueryResult result = twitter.search(new Query(QUERY));
 
 		List<Tweet> tweets = result.getTweets();
@@ -154,10 +153,8 @@ public class Importer {
 	 * @param tweet
 	 *            The tweet to publish
 	 * @return <code>true</code> if the tweet was added, <code>false</code>
-	 * @throws TwitterException
-	 *             if there was an error communicating with Podio
 	 */
-	private boolean publish(Tweet tweet) throws TwitterException {
+	private boolean publish(Tweet tweet) throws Exception {
 		Status status = twitter.showStatus(tweet.getId());
 
 		if (getItemId(tweet.getId()) != null) {
@@ -165,7 +162,48 @@ public class Importer {
 			return false;
 		}
 
-		if (status.isRetweet()) {
+		if (!status.isRetweet()) {
+			Integer imageId = uploadProfile(status);
+
+			List<FieldValuesUpdate> fields = new ArrayList<FieldValuesUpdate>();
+			fields.add(new FieldValuesUpdate(TEXT, "value", tweet.getText()));
+			fields.add(new FieldValuesUpdate(TWEET, "value", getFullText(tweet,
+					status)));
+			fields.add(new FieldValuesUpdate(FROM, "value", getAuthorLink(
+					tweet, status)));
+			if (imageId != null) {
+				fields.add(new FieldValuesUpdate(AVATAR, "value", imageId));
+			}
+			if (tweet.getLocation() != null) {
+				fields.add(new FieldValuesUpdate(LOCATION, "value", tweet
+						.getLocation()));
+			}
+			if (tweet.getSource() != null) {
+				fields.add(new FieldValuesUpdate(SOURCE, "value", tweet
+						.getSource()));
+			}
+			fields.add(new FieldValuesUpdate(LINK, "value", getTweetLink(tweet)));
+			if (status.getInReplyToStatusId() > 0) {
+				Integer replyToItemId = getItemId(status.getInReplyToStatusId());
+				if (replyToItemId != null) {
+					fields.add(new FieldValuesUpdate(REPLY_TO, "value",
+							replyToItemId));
+				}
+			}
+
+			int itemId = apiFactory.getItemAPI().addItem(
+					APP_ID,
+					new ItemCreate(Long.toString(tweet.getId()), fields,
+							Collections.<Integer> emptyList(), Arrays
+									.asList(status.getHashtags())), false);
+
+			Reference reference = new Reference(ReferenceType.ITEM, itemId);
+			uploadURLs(status, reference);
+
+			System.out.println("Added tweet " + tweet.getText());
+
+			return true;
+		} else {
 			Integer retweetItemId = getItemId(status.getRetweetedStatus()
 					.getId());
 			if (retweetItemId == null) {
@@ -207,47 +245,6 @@ public class Importer {
 			uploadURLs(status, new Reference(ReferenceType.COMMENT, commentId));
 
 			System.out.println("Added retweet " + tweet.getText());
-
-			return true;
-		} else {
-			Integer imageId = uploadProfile(status);
-
-			List<FieldValuesUpdate> fields = new ArrayList<FieldValuesUpdate>();
-			fields.add(new FieldValuesUpdate(TEXT, "value", tweet.getText()));
-			fields.add(new FieldValuesUpdate(TWEET, "value", getFullText(tweet,
-					status)));
-			fields.add(new FieldValuesUpdate(FROM, "value", getAuthorLink(
-					tweet, status)));
-			if (imageId != null) {
-				fields.add(new FieldValuesUpdate(AVATAR, "value", imageId));
-			}
-			if (tweet.getLocation() != null) {
-				fields.add(new FieldValuesUpdate(LOCATION, "value", tweet
-						.getLocation()));
-			}
-			if (tweet.getSource() != null) {
-				fields.add(new FieldValuesUpdate(SOURCE, "value", tweet
-						.getSource()));
-			}
-			fields.add(new FieldValuesUpdate(LINK, "value", getTweetLink(tweet)));
-			if (status.getInReplyToStatusId() > 0) {
-				Integer replyToItemId = getItemId(status.getInReplyToStatusId());
-				if (replyToItemId != null) {
-					fields.add(new FieldValuesUpdate(REPLY_TO, "value",
-							replyToItemId));
-				}
-			}
-
-			int itemId = apiFactory.getItemAPI().addItem(
-					APP_ID,
-					new ItemCreate(Long.toString(tweet.getId()), fields,
-							Collections.<Integer> emptyList(), Arrays
-									.asList(status.getHashtags())), false);
-
-			Reference reference = new Reference(ReferenceType.ITEM, itemId);
-			uploadURLs(status, reference);
-
-			System.out.println("Added tweet " + tweet.getText());
 
 			return true;
 		}
@@ -385,12 +382,8 @@ public class Importer {
 	 * @param args
 	 *            The first argument is mandatory and must specify the
 	 *            configuration file to use
-	 * @throws IOException
-	 *             if there was an error reading the configuration file
-	 * @throws TwitterException
-	 *             if there was an error communicating with Twitter
 	 */
-	public static void main(String[] args) throws IOException, TwitterException {
+	public static void main(String[] args) throws Exception {
 		Importer importer = new Importer(args[0]);
 		importer.process();
 	}
