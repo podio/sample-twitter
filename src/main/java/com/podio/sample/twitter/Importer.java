@@ -31,10 +31,9 @@ public class Importer {
 
 				searchReader.process(writer);
 
-				// System.out.println("Starting stream");
+				System.out.println("Starting stream");
 
-				// streamReader.process(writer);
-				return;
+				streamReader.process(writer);
 			} catch (Exception e) {
 				e.printStackTrace();
 				Thread.sleep(1000 * 60 * 10);

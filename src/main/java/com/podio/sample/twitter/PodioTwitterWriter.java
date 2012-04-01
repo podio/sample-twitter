@@ -100,6 +100,11 @@ public class PodioTwitterWriter implements TwitterWriter {
 			}
 		}
 
+		String url = "http://twitter.com/" + status.getUser().getScreenName();
+		String tag = "@" + status.getUser().getScreenName();
+
+		text = text.replace(tag, printer.getLink(tag, url));
+
 		return text;
 	}
 
