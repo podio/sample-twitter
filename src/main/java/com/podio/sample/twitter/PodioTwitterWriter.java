@@ -22,7 +22,9 @@ import com.podio.comment.CommentAPI;
 import com.podio.comment.CommentCreate;
 import com.podio.common.Reference;
 import com.podio.common.ReferenceType;
+import com.podio.file.FileAPI;
 import com.podio.item.FieldValuesUpdate;
+import com.podio.item.ItemAPI;
 import com.podio.item.ItemCreate;
 import com.podio.item.ItemsResponse;
 import com.podio.oauth.OAuthClientCredentials;
@@ -119,7 +121,8 @@ public class PodioTwitterWriter implements TwitterWriter {
 			}
 		}
 
-		if (status.getText().contains("p�dio")) {
+		if (status.getText().contains("pódio")
+				|| status.getText().contains("pòdio")) {
 			return false;
 		}
 
@@ -184,7 +187,7 @@ public class PodioTwitterWriter implements TwitterWriter {
 
 			List<Integer> fileIds = uploadURLs(status);
 
-			apiFactory.getItemAPI().addItem(
+			apiFactory.getAPI(ItemAPI.class).addItem(
 					APP_ID,
 					new ItemCreate(Long.toString(status.getId()), fields,
 							fileIds, tags), false);
@@ -200,7 +203,7 @@ public class PodioTwitterWriter implements TwitterWriter {
 				return false;
 			}
 
-			CommentAPI commentAPI = apiFactory.getCommentAPI();
+			CommentAPI commentAPI = apiFactory.getAPI(CommentAPI.class);
 			List<Comment> comments = commentAPI.getComments(new Reference(
 					ReferenceType.ITEM, retweetItemId));
 			for (Comment comment : comments) {
@@ -333,7 +336,7 @@ public class PodioTwitterWriter implements TwitterWriter {
 				name += ".gif";
 			}
 
-			return apiFactory.getFileAPI().uploadImage(url, name);
+			return apiFactory.getAPI(FileAPI.class).uploadImage(url, name);
 		} catch (IOException e) {
 			e.printStackTrace();
 
@@ -366,8 +369,8 @@ public class PodioTwitterWriter implements TwitterWriter {
 	 *         <code>null</code> otherwise
 	 */
 	private Integer getItemId(long id) {
-		ItemsResponse response = apiFactory.getItemAPI().getItemsByExternalId(
-				APP_ID, Long.toString(id));
+		ItemsResponse response = apiFactory.getAPI(ItemAPI.class)
+				.getItemsByExternalId(APP_ID, Long.toString(id));
 
 		if (response.getFiltered() == 0) {
 			return null;
