@@ -44,6 +44,7 @@ public class PodioTwitterWriter implements TwitterWriter {
 	private static final String TWEET = "tweet";
 	private static final String FROM = "user";
 	private static final String AVATAR = "avatar";
+	private static final String FOLLOWERS = "followers";
 	private static final String LOCATION = "location";
 	private static final String SOURCE = "source";
 	private static final String LINK = "link";
@@ -146,56 +147,7 @@ public class PodioTwitterWriter implements TwitterWriter {
 			return false;
 		}
 
-		if (!status.isRetweet()) {
-			Integer imageId = uploadProfile(status);
-
-			TweetPrinter printer = new HTMLTweetPrinter();
-
-			List<FieldValuesUpdate> fields = new ArrayList<FieldValuesUpdate>();
-			fields.add(new FieldValuesUpdate(TEXT, "value", status.getText()));
-			fields.add(new FieldValuesUpdate(TWEET, "value", getFullText(
-					status, printer)));
-			fields.add(new FieldValuesUpdate(FROM, "value", getAuthorLink(
-					status, printer)));
-			if (imageId != null) {
-				fields.add(new FieldValuesUpdate(AVATAR, "value", imageId));
-			}
-			if (status.getPlace() != null) {
-				fields.add(new FieldValuesUpdate(LOCATION, "value", status
-						.getPlace().getName()));
-			}
-			if (status.getSource() != null) {
-				fields.add(new FieldValuesUpdate(SOURCE, "value", status
-						.getSource()));
-			}
-			fields.add(new FieldValuesUpdate(LINK, "value",
-					getTweetLink(status)));
-			if (status.getInReplyToStatusId() > 0) {
-				Integer replyToItemId = getItemId(status.getInReplyToStatusId());
-				if (replyToItemId != null) {
-					fields.add(new FieldValuesUpdate(REPLY_TO, "value",
-							replyToItemId));
-				}
-			}
-
-			List<String> tags = new ArrayList<String>();
-			if (status.getHashtagEntities() != null) {
-				for (HashtagEntity tag : status.getHashtagEntities()) {
-					tags.add(tag.getText());
-				}
-			}
-
-			List<Integer> fileIds = uploadURLs(status);
-
-			apiFactory.getAPI(ItemAPI.class).addItem(
-					APP_ID,
-					new ItemCreate(Long.toString(status.getId()), fields,
-							fileIds, tags), false);
-
-			System.out.println("Added tweet " + status.getText());
-
-			return true;
-		} else {
+		if (status.isRetweet()) {
 			Integer retweetItemId = getItemId(status.getRetweetedStatus()
 					.getId());
 			if (retweetItemId == null) {
@@ -239,6 +191,57 @@ public class PodioTwitterWriter implements TwitterWriter {
 							Collections.<Integer> emptyList(), fileIds), false);
 
 			System.out.println("Added retweet " + status.getText());
+
+			return true;
+		} else {
+			Integer imageId = uploadProfile(status);
+
+			TweetPrinter printer = new HTMLTweetPrinter();
+
+			List<FieldValuesUpdate> fields = new ArrayList<FieldValuesUpdate>();
+			fields.add(new FieldValuesUpdate(TEXT, "value", status.getText()));
+			fields.add(new FieldValuesUpdate(TWEET, "value", getFullText(
+					status, printer)));
+			fields.add(new FieldValuesUpdate(FROM, "value", getAuthorLink(
+					status, printer)));
+			if (imageId != null) {
+				fields.add(new FieldValuesUpdate(AVATAR, "value", imageId));
+			}
+			fields.add(new FieldValuesUpdate(FOLLOWERS, "value", status
+					.getUser().getFollowersCount()));
+			if (status.getPlace() != null) {
+				fields.add(new FieldValuesUpdate(LOCATION, "value", status
+						.getPlace().getName()));
+			}
+			if (status.getSource() != null) {
+				fields.add(new FieldValuesUpdate(SOURCE, "value", status
+						.getSource()));
+			}
+			fields.add(new FieldValuesUpdate(LINK, "value",
+					getTweetLink(status)));
+			if (status.getInReplyToStatusId() > 0) {
+				Integer replyToItemId = getItemId(status.getInReplyToStatusId());
+				if (replyToItemId != null) {
+					fields.add(new FieldValuesUpdate(REPLY_TO, "value",
+							replyToItemId));
+				}
+			}
+
+			List<String> tags = new ArrayList<String>();
+			if (status.getHashtagEntities() != null) {
+				for (HashtagEntity tag : status.getHashtagEntities()) {
+					tags.add(tag.getText());
+				}
+			}
+
+			List<Integer> fileIds = uploadURLs(status);
+
+			apiFactory.getAPI(ItemAPI.class).addItem(
+					APP_ID,
+					new ItemCreate(Long.toString(status.getId()), fields,
+							fileIds, tags), false);
+
+			System.out.println("Added tweet " + status.getText());
 
 			return true;
 		}
