@@ -65,11 +65,6 @@
 	</repositories>
 	<dependencies>
 		<dependency>
-			<groupId>org.twitter4j</groupId>
-			<artifactId>twitter4j-core</artifactId>
-			<version>2.2.5-SNAPSHOT</version>
-		</dependency>
-		<dependency>
 			<groupId>com.podio</groupId>
 			<artifactId>api</artifactId>
 			<version>0.7.3</version>
@@ -78,8 +73,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.twitter4j</groupId>
+			<artifactId>twitter4j-core</artifactId>
+			<version>2.2.5</version>
+			<type>jar</type>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.twitter4j</groupId>
 			<artifactId>twitter4j-stream</artifactId>
-			<version>2.2.4</version>
+			<version>2.2.5</version>
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>

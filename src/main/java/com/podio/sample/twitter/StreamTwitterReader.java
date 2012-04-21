@@ -39,7 +39,9 @@ public class StreamTwitterReader implements TwitterReader {
 				.setUseSSL(true);
 
 		this.twitter = new TwitterStreamFactory(cb.build())
-				.getInstance(new BasicAuthorization("hlmrn", "127345"));
+				.getInstance(new BasicAuthorization(properties
+						.getProperty("twitter.username"), properties
+						.getProperty("twitter.password")));
 	}
 
 	@Override
