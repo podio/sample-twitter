@@ -1,47 +1,25 @@
 package com.podio.sample.twitter;
 
 import java.io.IOException;
-import java.util.Properties;
 
 import twitter4j.FilterQuery;
 import twitter4j.Status;
 import twitter4j.StatusListener;
-import twitter4j.StatusStream;
 import twitter4j.TwitterException;
 import twitter4j.TwitterStream;
 import twitter4j.TwitterStreamFactory;
 import twitter4j.UserStreamAdapter;
-import twitter4j.auth.BasicAuthorization;
-import twitter4j.conf.ConfigurationBuilder;
+import twitter4j.auth.OAuthAuthorization;
+import twitter4j.conf.Configuration;
 
-public class StreamTwitterReader implements TwitterReader {
+public class StreamTwitterReader extends BaseTwitterReader {
 
-	/**
-	 * The interface to Twitter
-	 */
-	private final TwitterStream twitter;
+	private TwitterStream twitter;
 
-	/**
-	 * Creates a new importer with configuration read from the given file.
-	 * 
-	 * @param configFile
-	 *            The configuration file to use. For an example file see the
-	 *            example.config.properties in the root folder.
-	 * @throws IOException
-	 *             If there was an error reading from the configuration file
-	 */
-	public StreamTwitterReader(Properties properties) throws IOException {
-		ConfigurationBuilder cb = new ConfigurationBuilder();
-		cb.setDebugEnabled(true)
-				.setOAuthConsumerKey(properties.getProperty("twitter.token"))
-				.setOAuthConsumerSecret(
-						properties.getProperty("twitter.secret"))
-				.setUseSSL(true);
-
-		this.twitter = new TwitterStreamFactory(cb.build())
-				.getInstance(new BasicAuthorization(properties
-						.getProperty("twitter.username"), properties
-						.getProperty("twitter.password")));
+	public StreamTwitterReader(Configuration configuration) throws IOException,
+			TwitterException {
+		this.twitter = new TwitterStreamFactory(configuration)
+				.getInstance(new OAuthAuthorization(configuration));
 	}
 
 	@Override
@@ -55,15 +33,16 @@ public class StreamTwitterReader implements TwitterReader {
 					e.printStackTrace();
 				}
 			}
+
+			@Override
+			public void onException(Exception ex) {
+				ex.printStackTrace();
+			}
 		};
+		twitter.addListener(listener);
 
 		FilterQuery query = new FilterQuery();
-		query.track(new String[] { "@podio", "#podio", "@podiosupport",
-				"podio.com" });
-
-		StatusStream stream = twitter.getFilterStream(query);
-		while (true) {
-			stream.next(listener);
-		}
+		query.track(TERMS);
+		twitter.filter(query);
 	}
 }

@@ -281,7 +281,11 @@ public class PodioTwitterWriter implements TwitterWriter {
 	 * @return The file id of the uploaded file
 	 */
 	private Integer uploadProfile(Status status) {
-		return uploadURL(status.getUser().getProfileImageURL());
+		try {
+			return uploadURL(new URL(status.getUser().getProfileImageURL()));
+		} catch (MalformedURLException e) {
+			return null;
+		}
 	}
 
 	private List<Integer> uploadURLs(Status status) {
@@ -290,12 +294,19 @@ public class PodioTwitterWriter implements TwitterWriter {
 		URLEntity[] urls = status.getURLEntities();
 		if (urls != null) {
 			for (URLEntity url : urls) {
-				URL resolvedUrl = url.getExpandedURL() != null ? url
+				String expandedUrl = url.getExpandedURL() != null ? url
 						.getExpandedURL() : url.getURL();
-				if (resolvedUrl == null) {
+				if (expandedUrl == null) {
 					continue;
 				}
-
+				
+				URL resolvedUrl;
+				try {
+					resolvedUrl = new URL(expandedUrl);
+				} catch (MalformedURLException e) {
+					continue;
+				}
+				
 				resolvedUrl = resolveURL(resolvedUrl);
 				if (resolvedUrl == null) {
 					continue;

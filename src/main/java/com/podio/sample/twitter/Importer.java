@@ -3,6 +3,9 @@ package com.podio.sample.twitter;
 import java.io.FileInputStream;
 import java.util.Properties;
 
+import twitter4j.conf.Configuration;
+import twitter4j.conf.ConfigurationBuilder;
+
 /**
  * Imports tweets
  * 
@@ -20,24 +23,33 @@ public class Importer {
 		Properties properties = new Properties();
 		properties.load(new FileInputStream(args[0]));
 
-		TwitterReader streamReader = new StreamTwitterReader(properties);
-		TwitterReader searchReader = new SearchTwitterReader(properties);
+		ConfigurationBuilder cb = new ConfigurationBuilder();
+		cb.setDebugEnabled(true)
+				.setOAuthConsumerKey(properties.getProperty("twitter.token"))
+				.setOAuthConsumerSecret(
+						properties.getProperty("twitter.secret"))
+				.setOAuthAccessToken(
+						properties.getProperty("twitter.access_token"))
+				.setOAuthAccessTokenSecret(
+						properties.getProperty("twitter.access_token_secret"))
+				.setUseSSL(true);
+		Configuration configuration = cb.build();
+
+		TwitterReader searchReader = new SearchTwitterReader(configuration);
+		TwitterReader streamReader = new StreamTwitterReader(configuration);
 
 		TwitterWriter writer = new PodioTwitterWriter(properties);
 
-		while (true) {
-			try {
-				System.out.println("Starting search");
+		try {
+			System.out.println("Starting search");
 
-				searchReader.process(writer);
+			searchReader.process(writer);
 
-				System.out.println("Starting stream");
+			System.out.println("Starting stream");
 
-				streamReader.process(writer);
-			} catch (Exception e) {
-				e.printStackTrace();
-				Thread.sleep(1000 * 60 * 10);
-			}
+			streamReader.process(writer);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }
